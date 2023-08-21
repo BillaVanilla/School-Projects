@@ -1,4 +1,3 @@
-package Lab8_DataProcess;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
