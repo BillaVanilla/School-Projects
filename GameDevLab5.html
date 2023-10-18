@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<title>Simple Animation</title>
+
+<!--
+Simple animation program.
+-Michael Weeks, October 2019
+-->
+
+<script type="application/javascript">
+// <![CDATA[
+var INTERVAL = 50;
+var DEBUG = false; //true;
+
+var canvas;             // The canvas shown on the page.
+var ctx;                // The context, used to access the canvas.
+
+var SpriteRow = 0;      // Row of the graphic to show
+var SpriteCol = 0;      // Col of the graphic to show
+var MaxSpriteRow = 8;   // How many rows of images
+var MaxSpriteCol = 8;  // How many columns of images
+
+var SpriteX = 100;      // Position of sprite on the canvas
+var SpriteY = 100;
+var SpriteWidth = 32;   // Width, Height of each subimage
+var SpriteHeight = 32;
+
+var SpriteX2 = 450;      // Position of sprite on the canvas
+var SpriteY2 = 350;
+var SpriteWidth2 = 32;   // Width, Height of each subimage
+var SpriteHeight2 = 32;
+
+var SpriteXGoal= 300;      // Position of sprite on the canvas
+var SpriteYGoal = 300;
+var SpriteWidthGoal = 32;   // Width, Height of each subimage
+var SpriteHeightGoal = 32; 
+
+var SpriteImage = new Image();   // Sprite sheet
+var SpriteImage2 = new Image();   // Sprite sheet
+var SpriteImageGoal = new Image(); // Sprite sheet
+
+// Verifies the movement of Sprite 1
+var left1=false;
+var right1=false;
+var up1=false;
+var down1=false;
+
+// Verifies the movement of Sprite 2
+var left2=false;
+var right2=false;
+var up2=false;
+var down2=false;
+
+// Flag for Collision Detection
+var isColliding = false;
+var isCollidingSprite1 = false;
+var isCollidingSprite2 = false; 
+
+// Source of Sprite images
+SpriteImage.src   = "C:/Users/User/kenny.png";
+SpriteImage2.src = "C:/Users/User/ichigo.png";
+SpriteImageGoal.src = "C:/Users/User/zangetsu.png";
+
+// Value of the scores for Sprite1 and Sprite2
+var ScoreBoardSprite1 = 0;
+var ScoreBoardSprite2 = 0;
+
+// Set up a timer to execute every 50 ms.
+var myInterval;
+var SpriteSpeed = 5; // Speed at which the controllable sprites are allowed to move
+
+function eraseSprite() {
+  // erase sprite
+  ctx.clearRect(SpriteX, SpriteY, SpriteWidth, SpriteHeight);
+  ctx.clearRect(SpriteX2, SpriteY2, SpriteWidth2, SpriteHeight2);
+}
+
+// Function For Player1 ScoreBoard Display and counter.
+function drawScorePlayer1() {
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "#0095DD";
+  ctx.fillText(`Player1 Score: ${ScoreBoardSprite1}`, 8, 20);
+}
+// Function to draw black box over Player1 Scoreboard Display and counter.
+function resetScorePlayer1(){
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, 140, 50);
+}
+// Function For Player1 ScoreBoard Display and counter.
+function drawScorePlayer2() {
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "#0095DD";
+  ctx.fillText(`Player2 Score: ${ScoreBoardSprite2}`, 8, 40);
+}
+// Function to draw black box over Player1 Scoreboard Display and counter.
+function resetScorePlayer2(){
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, 140, 50);
+}
+
+function clearScoreSprite(){
+  ctx.clearRect(SpriteXGoal, SpriteYGoal, SpriteWidthGoal, SpriteHeightGoal);
+}
+
+
+function drawSprite() {
+  // draws sprite
+  // Example: ctx.drawImage(SpriteImage, SpriteX, SpriteY);
+  ctx.drawImage(SpriteImage, SpriteCol * SpriteWidth, SpriteRow * SpriteHeight,
+    SpriteWidth, SpriteHeight, SpriteX, SpriteY, SpriteWidth, SpriteHeight);
+
+  ctx.drawImage(SpriteImage2, SpriteCol *SpriteWidth2, SpriteRow * SpriteHeight2,
+  SpriteWidth2, SpriteHeight2, SpriteX2, SpriteY2, SpriteWidth2, SpriteHeight2);
+
+// update the next image to show
+// SpriteCol++; (Leave commented out)
+ if (SpriteCol >= MaxSpriteCol)
+  SpriteCol = 0;
+}
+
+// Reset the position of the Goal Sprite
+function MoveScoreSprite(){ 
+  SpriteXGoal = Math.floor((Math.random() * 400) + 0);
+  SpriteYGoal = Math.floor((Math.random() * 400) + 0);
+}
+
+function drawScoreSprite(){   // draws sprite
+  ctx.drawImage(SpriteImageGoal, SpriteCol * SpriteWidthGoal, SpriteRow * SpriteHeightGoal,
+    SpriteWidthGoal, SpriteHeightGoal, SpriteXGoal, SpriteYGoal, SpriteWidthGoal, SpriteHeightGoal);
+}
+
+// function to detect collision between the goal sprite and Sprite 1
+function CollisionDetectionGoal1(){
+  if (
+    SpriteXGoal < SpriteX + SpriteWidth &&
+    SpriteXGoal + SpriteWidthGoal > SpriteX &&
+    SpriteYGoal < SpriteY + SpriteHeight &&
+    SpriteYGoal + SpriteHeightGoal > SpriteY
+  ) {
+    // Collision detected. Reset Position.
+    isCollidingSprite1 = true;
+  }
+}
+
+// function to detect collision between the goal sprite and Sprite 2
+function CollisionDetectionGoal2(){
+  if (
+    SpriteX2 < SpriteXGoal + SpriteWidthGoal &&
+    SpriteX2 + SpriteWidth2 > SpriteXGoal &&
+    SpriteY2 < SpriteYGoal + SpriteHeightGoal &&
+    SpriteY2 + SpriteHeight2 > SpriteYGoal
+  ) {
+    // Collision detected. Reset Position.
+    isCollidingSprite2 = true;
+  }
+}
+
+// Function to detect function's movement and move it accordingly
+function MovementDetection() {
+  if (right1 == true){ // Right arrow pressed
+  SpriteX = SpriteX + SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal1();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteX = SpriteX - SpriteSpeed;
+      SpriteX2 = SpriteX2 + SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+    if (CollisionDetectionGoal1 == true){
+      clearScoreSprite();
+      MoveScoreSprite();
+      drawScoreSprite();
+    }
+  right1 = false;
+
+} if (right2 == true){ // D pressed 
+  SpriteX2 = SpriteX2 + SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal2();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteX = SpriteX + SpriteSpeed;
+      SpriteX2 = SpriteX2 - SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  right2 = false;
+
+} if (left1 == true){ // Left pressed 
+  SpriteX = SpriteX - SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal1();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteX = SpriteX + SpriteSpeed;
+      SpriteX2 = SpriteX2 - SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  left1 = false;
+
+} if (left2 == true){ // A pressed
+  SpriteX2 = SpriteX2 - SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal2();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteX = SpriteX - SpriteSpeed;
+      SpriteX2 = SpriteX2 + SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  left2 = false;
+} 
+
+if (up1 == true){ // Up arrow pressed
+  SpriteY = SpriteY - SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal1();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteY = SpriteY + SpriteSpeed;
+      SpriteY2 = SpriteY2 - SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  up1 = false;
+
+} if (up2 == true){ // W pressed
+  SpriteY2 = SpriteY2 - SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal2();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteY = SpriteY - SpriteSpeed;
+      SpriteY2 = SpriteY2 + SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  up2 = false;
+
+} if(down1 == true){ // Down arrow pressed
+  SpriteY = SpriteY + SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal1();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteY = SpriteY - SpriteSpeed;
+      SpriteY2 = SpriteY2 + SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  down1 = false;
+  }
+
+if(down2 == true){ // S pressed
+  SpriteY2 = SpriteY2 + SpriteSpeed;
+  CollisionDetection();
+  CollisionDetectionGoal2();
+    if (isColliding == true){ // Resets position if object collide
+      SpriteY = SpriteY + SpriteSpeed;
+      SpriteY2 = SpriteY2 - SpriteSpeed;
+      isColliding = false; // resets flag of hitbox
+  }
+  down2 = false;
+  }
+}
+
+// function to detect collision between the Two controlled moving Sprites
+function CollisionDetection(){
+  if (
+    SpriteX < SpriteX2 + SpriteWidth2 &&
+    SpriteX + SpriteWidth > SpriteX2 &&
+    SpriteY < SpriteY2 + SpriteHeight2 &&
+    SpriteY + SpriteHeight > SpriteY2
+  ) {
+    // Collision detected. Reset Position.
+    isColliding = true;
+  }
+}
+
+// Function that call all of the other functions for every action in 50 ms
+function Tick() {
+resetScorePlayer1();
+resetScorePlayer2();
+drawScoreSprite();
+// Erase the sprite from its current location.
+eraseSprite();
+// Detecting if there is any keypress for sprites and moving them accordingly
+MovementDetection();
+if (isCollidingSprite1 == true){
+      clearScoreSprite();
+      MoveScoreSprite();
+      drawScoreSprite();
+      ScoreBoardSprite1++;
+      isCollidingSprite1 = false;
+
+    } else if (isCollidingSprite2 == true){
+      clearScoreSprite();
+      MoveScoreSprite();
+      drawScoreSprite();
+      ScoreBoardSprite2++;
+      isCollidingSprite2 = false;
+    }
+    drawScorePlayer1();
+    drawScorePlayer2();
+// Show a new image
+drawSprite();
+}
+
+
+function loadComplete() {
+console.log("Load is complete.");
+canvas = document.getElementById("theCanvas");
+ctx = canvas.getContext("2d");
+myInterval = self.setInterval(function(){Tick()}, INTERVAL);
+}
+
+// What to do when the user presses a key.
+function whenKeyPressed(key) {
+switch (key) {
+  case 28:  // Right arrow was pressed
+      right1 = true;
+      break;
+  case 29:  // Left arrow, ASCII 29
+  left1 = true;
+      break;
+  case 30:  // Up arrow was pressed
+      // Go up a row
+      up1 = true;
+      break;
+  case 31:  // Down arrow was pressed
+      // Go down a row
+      down1 = true;
+      break;
+
+  case 32: // A key was pressed
+        // Go left
+        left2 = true;
+        break;
+    case 33: // D key was pressed
+        // Go right
+        right2 = true;
+        break;
+    case 34: // S key was pressed
+        // Go down
+        down2 = true;
+        break;
+    case 35: // W key pressed
+        // Go up
+        up2 = true;
+        break;
+  }
+}
+///]]>
+</script>
+
+</head>
+<body onload="loadComplete()" bgcolor="#0f0000" text="#ffffff">
+
+<center>
+  <canvas id="theCanvas" tabindex="1" width="640" height="480"></canvas>
+<h2>Press up/down to see different rows</h2>
+</center>
+
+<script type="application/javascript">
+  //
+  // Set up a function to handle key-presses.
+  //
+  // This should work across most browsers.
+  document['onkeydown'] = function(event) {
+    event = event || window.event;
+    var key = event.which || event.cursor;
+        // Check for a special key value, and map it to ASCII.
+        switch (key) {
+      case 37:  // Left arrow, ASCII 29
+        key = 29;
+        break;
+      case 38:  // Up arrow, ASCII 30
+        key = 30;
+        break;
+      case 39:  // Right arrow, ASCII 28
+        key = 28;
+        break;
+      case 40:  // Down arrow, ASCII 31
+        key = 31;
+        break;
+
+      case 65:  // A key, ASCII 97
+        key = 32;
+        break;
+      case 68:  // D key, ASCII 100
+        key = 33;
+        break;
+      case 83: // S key, ASCII 115
+        key = 34;
+        break;
+      case 87: // W key, ASCII 119
+        key = 35;
+        break;
+    }
+    //document.getElementById("keydown").innerHTML =
+       //  " key Down event, keycode " + key;
+       console.log(key);
+       whenKeyPressed(key);
+  };
+</script>
+</body></html>
